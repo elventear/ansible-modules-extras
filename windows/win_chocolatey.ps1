@@ -107,7 +107,7 @@ Function Choco-IsInstalled
         Throw "Error checking installation status for $package" 
     } 
     
-    If ("$results" -match '(\d+) packages installed.')
+    If ("$results" -match " $package .* (\d+) packages installed.")
     {
         return $matches[1] -gt 0
     }

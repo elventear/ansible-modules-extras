@@ -60,15 +60,6 @@ options:
     required: false
     default: null
     aliases: []
-  showlog:
-    description:
-      - Outputs the chocolatey log inside a chocolatey_log property.
-    required: false
-    choices:
-      - yes
-      - no
-    default: no
-    aliases: []
   source:
     description:
       - Which source to install from
@@ -79,12 +70,6 @@ options:
       - webpi
       - windowsfeatures
     default: chocolatey
-    aliases: []
-  logPath:
-    description:
-      - Where to log command output to
-    require: false
-    default: c:\\ansible-playbook.log
     aliases: []
 author: Trond Hindenes, Peter Mounce
 '''

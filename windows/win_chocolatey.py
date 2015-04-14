@@ -53,6 +53,15 @@ options:
       - no
     default: no
     aliases: []
+  upgrade:
+    description:
+      - If package is already installed it, try to upgrade to the latest version or to the specified version
+    required: false
+    choices:
+      - yes
+      - no
+    default: no
+    aliases: []
   version:
     description:
       - Specific version of the package to be installed

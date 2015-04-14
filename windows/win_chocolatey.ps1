@@ -43,6 +43,15 @@ Else
     $force = $false
 }
 
+If ($params.upgrade)
+{
+    $upgrade = $params.upgrade | ConvertTo-Bool
+}
+Else
+{
+    $upgrade = $false
+}
+
 If ($params.version)
 {
     $version = $params.version
@@ -74,18 +83,31 @@ Else
     $state = "present"
 }
 
-$ChocoAlreadyInstalled = get-command choco -ErrorAction 0
-if ($ChocoAlreadyInstalled -eq $null)
+Function Chocolatey-Install-Upgrade
 {
-    #We need to install chocolatey
-    $install_choco_result = iex ((new-object net.webclient).DownloadString("https://chocolatey.org/install.ps1"))
-    $result.changed = $true
-    $executable = "C:\ProgramData\chocolatey\bin\choco.exe"
+    [CmdletBinding()]
+
+    param()
+
+    $ChocoAlreadyInstalled = get-command choco -ErrorAction 0
+    if ($ChocoAlreadyInstalled -eq $null)
+    {
+        #We need to install chocolatey
+        iex ((new-object net.webclient).DownloadString("https://chocolatey.org/install.ps1"))
+        $result.changed = $true
+        $script:executable = "C:\ProgramData\chocolatey\bin\choco.exe"
+    }
+    else
+    {
+        $script:executable = "choco.exe"
+
+        if ((choco --version) -lt '0.9.9')
+        {
+            Choco-Upgrade chocolatey 
+        }
+    }
 }
-Else
-{
-    $executable = "choco.exe"
-}
+
 
 Function Choco-IsInstalled
 {
@@ -115,7 +137,7 @@ Function Choco-IsInstalled
     $false
 }
 
-Function Choco-Install 
+Function Choco-Upgrade 
 {
     [CmdletBinding()]
     
@@ -130,8 +152,83 @@ Function Choco-Install
         [bool]$force
     )
 
+    if (-not (Choco-IsInstalled $package))
+    {
+        throw "$package is not installed, you cannot upgrade"
+    }
+
+    $cmd = "$executable upgrade -y $package"
+
+    if (-not $source)
+    {
+        $cmd += " -source https://chocolatey.org/api/v2/"
+    }
+    elseif ($source -eq "chocolatey")
+    {
+        $cmd += " -source https://chocolatey.org/api/v2/"
+    }
+    elseif (($source -eq "windowsfeatures") -or `
+        ($source -eq "webpi") -or ($source -eq "ruby"))
+    {
+        $cmd += " -source $source"
+    }
+    else
+    {
+        Throw "source is $source - must be one of chocolatey, ruby, webpi or windowsfeatures."
+    }
+
+    if ($version)
+    {
+        $cmd += " -version $version"
+    }
+
+    if ($force)
+    {
+        $cmd += " -force"
+    }
+
+    $results = invoke-expression $cmd
+
+    if ($LastExitCode -ne 0)
+    {
+        Set-Attr $result "choco_error_cmd" $cmd
+        Set-Attr $result "choco_error_log" "$results"
+        Throw "Error installing $package" 
+    }
+
+    if ("$results" -match ' upgraded (\d+)/\d+ package\(s\)\. ')
+    {
+        if ($matches[1] -gt 0)
+        {
+            $result.changed = $true
+        }
+    }
+}
+
+Function Choco-Install 
+{
+    [CmdletBinding()]
+    
+    param(
+        [Parameter(Mandatory=$true, Position=1)]
+        [string]$package,
+        [Parameter(Mandatory=$false, Position=2)]
+        [string]$version,
+        [Parameter(Mandatory=$false, Position=3)]
+        [string]$source,
+        [Parameter(Mandatory=$false, Position=4)]
+        [bool]$force,
+        [Parameter(Mandatory=$false, Position=5)]
+        [bool]$upgrade
+    )
+
     if (Choco-IsInstalled $package)
     {
+        if ($upgrade)
+        {
+            Choco-Upgrade -package $package -version $version -source $source -force $force
+        }
+
         return
     }
 
@@ -220,6 +317,8 @@ Function Choco-Uninstall
 }
 Try
 {
+    Chocolatey-Install-Upgrade
+
     if (($source -eq 'webpi') -and -not (Choco-IsInstalled webpicmd))
     {
         Choco-Install lessmsi
@@ -228,7 +327,8 @@ Try
 
     if ($state -eq "present")
     {
-        Choco-Install -package $package -version $version -source $params.source -force $force
+        Choco-Install -package $package -version $version `
+            -source $params.source -force $force -upgrade $upgrade
     }
     else
     {

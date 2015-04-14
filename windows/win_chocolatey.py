@@ -80,7 +80,7 @@ options:
       - windowsfeatures
     default: chocolatey
     aliases: []
-author: Trond Hindenes, Peter Mounce
+author: Trond Hindenes, Peter Mounce, Pepe Barbe
 '''
 
 # TODO:

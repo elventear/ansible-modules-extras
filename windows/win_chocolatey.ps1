@@ -107,7 +107,13 @@ Function Determine-Source
     }
     elseif ($privateSource -eq "url")
     {
-        $privateUrl = $params.url.ToString().ToLower()
+        if(-not $params.url) {
+            $privateUrl = "https://chocolatey.org/api/v2/"
+        }
+        else {
+            $privateUrl = $params.url.ToString().ToLower()
+        }
+        
         $privateCmd += " -source $privateUrl"
     }
     else

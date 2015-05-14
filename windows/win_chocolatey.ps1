@@ -157,7 +157,7 @@ Function Choco-Upgrade
         throw "$package is not installed, you cannot upgrade"
     }
 
-    $cmd = "$executable upgrade -y $package"
+    $cmd = "$executable upgrade -dv -y $package"
 
     if (-not $source)
     {
@@ -232,7 +232,7 @@ Function Choco-Install
         return
     }
 
-    $cmd = "$executable install -y $package"
+    $cmd = "$executable install -dv -y $package"
 
     if (-not $source)
     {
@@ -292,7 +292,7 @@ Function Choco-Uninstall
         return
     }
 
-    $cmd = "$executable uninstall -y $package"
+    $cmd = "$executable uninstall -dv -y $package"
 
     if ($version)
     {

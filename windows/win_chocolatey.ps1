@@ -83,6 +83,41 @@ Else
     $state = "present"
 }
 
+Function Determine-Source
+{
+    [CmdletBinding()]
+
+    param(
+        $privateCmd,
+        $privateSource
+    )
+
+    if (-not $privateSource)
+    {
+        $privateCmd += " -source https://chocolatey.org/api/v2/"
+    }
+    elseif ($privateSource -eq "chocolatey")
+    {
+        $privateCmd += " -source https://chocolatey.org/api/v2/"
+    }
+    elseif (($privateSource -eq "windowsfeatures") -or `
+        ($privateSource -eq "webpi") -or ($privateSource -eq "ruby"))
+    {
+        $privateCmd += " -source $privateSource"
+    }
+    elseif ($privateSource -eq "url")
+    {
+        $privateUrl = $params.url.ToString().ToLower()
+        $privateCmd += " -source $privateUrl"
+    }
+    else
+    {
+        Throw "source is $privateSource - must be one of chocolatey, ruby, webpi, url or windowsfeatures."
+    }
+
+    $privateCmd
+}
+
 Function Chocolatey-Install-Upgrade
 {
     [CmdletBinding()]
@@ -157,25 +192,7 @@ Function Choco-Upgrade
         throw "$package is not installed, you cannot upgrade"
     }
 
-    $cmd = "$executable upgrade -y $package"
-
-    if (-not $source)
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif ($source -eq "chocolatey")
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif (($source -eq "windowsfeatures") -or `
-        ($source -eq "webpi") -or ($source -eq "ruby"))
-    {
-        $cmd += " -source $source"
-    }
-    else
-    {
-        Throw "source is $source - must be one of chocolatey, ruby, webpi or windowsfeatures."
-    }
+    $cmd = Determine-Source "$executable upgrade -y $package" $source
 
     if ($version)
     {
@@ -232,25 +249,7 @@ Function Choco-Install
         return
     }
 
-    $cmd = "$executable install -y $package"
-
-    if (-not $source)
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif ($source -eq "chocolatey")
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif (($source -eq "windowsfeatures") -or `
-        ($source -eq "webpi") -or ($source -eq "ruby"))
-    {
-        $cmd += " -source $source"
-    }
-    else
-    {
-        Throw "source is $source - must be one of chocolatey, ruby, webpi or windowsfeatures."
-    }
+    $cmd = Determine-Source "$executable install -y $package" $source
 
     if ($version)
     {

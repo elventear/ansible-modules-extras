@@ -83,47 +83,6 @@ Else
     $state = "present"
 }
 
-Function Determine-Source
-{
-    [CmdletBinding()]
-
-    param(
-        $privateCmd,
-        $privateSource
-    )
-
-    if (-not $privateSource)
-    {
-        $privateCmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif ($privateSource -eq "chocolatey")
-    {
-        $privateCmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif (($privateSource -eq "windowsfeatures") -or `
-        ($privateSource -eq "webpi") -or ($privateSource -eq "ruby"))
-    {
-        $privateCmd += " -source $privateSource"
-    }
-    elseif ($privateSource -eq "url")
-    {
-        if(-not $params.url) {
-            $privateUrl = "https://chocolatey.org/api/v2/"
-        }
-        else {
-            $privateUrl = $params.url.ToString().ToLower()
-        }
-        
-        $privateCmd += " -source $privateUrl"
-    }
-    else
-    {
-        Throw "source is $privateSource - must be one of chocolatey, ruby, webpi, url or windowsfeatures."
-    }
-
-    $privateCmd
-}
-
 Function Chocolatey-Install-Upgrade
 {
     [CmdletBinding()]
@@ -188,8 +147,6 @@ Function Choco-Upgrade
         [Parameter(Mandatory=$false, Position=2)]
         [string]$version,
         [Parameter(Mandatory=$false, Position=3)]
-        [string]$source,
-        [Parameter(Mandatory=$false, Position=4)]
         [bool]$force
     )
 
@@ -198,7 +155,13 @@ Function Choco-Upgrade
         throw "$package is not installed, you cannot upgrade"
     }
 
-    $cmd = Determine-Source "$executable upgrade -dv -y $package" $source
+    $cmd = "$executable upgrade -dv -y $package"
+
+    if ($params.source)
+    {
+        $source = $params.source.ToString().ToLower()
+        $cmd += " -source $source"
+    }
 
     if ($version)
     {
@@ -238,10 +201,8 @@ Function Choco-Install
         [Parameter(Mandatory=$false, Position=2)]
         [string]$version,
         [Parameter(Mandatory=$false, Position=3)]
-        [string]$source,
-        [Parameter(Mandatory=$false, Position=4)]
         [bool]$force,
-        [Parameter(Mandatory=$false, Position=5)]
+        [Parameter(Mandatory=$false, Position=4)]
         [bool]$upgrade
     )
 
@@ -249,13 +210,19 @@ Function Choco-Install
     {
         if ($upgrade)
         {
-            Choco-Upgrade -package $package -version $version -source $source -force $force
+            Choco-Upgrade -package $package -version $version -force $force
         }
 
         return
     }
 
-    $cmd = Determine-Source "$executable install -dv -y $package" $source
+    $cmd = "$executable install -dv -y $package"
+
+    if ($params.source)
+    {
+        $source = $params.source.ToString().ToLower()
+        $cmd += " -source $source"
+    }
 
     if ($version)
     {
@@ -324,16 +291,10 @@ Try
 {
     Chocolatey-Install-Upgrade
 
-    if (($source -eq 'webpi') -and -not (Choco-IsInstalled webpicmd))
-    {
-        Choco-Install lessmsi
-        Choco-Install webpicmd
-    }
-
     if ($state -eq "present")
     {
         Choco-Install -package $package -version $version `
-            -source $params.source -force $force -upgrade $upgrade
+            -force $force -upgrade $upgrade
     }
     else
     {

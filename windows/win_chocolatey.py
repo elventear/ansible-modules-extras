@@ -71,19 +71,7 @@ options:
     aliases: []
   source:
     description:
-      - Which source to install from
-    require: false
-    choices:
-      - chocolatey
-      - ruby
-      - webpi
-      - url
-      - windowsfeatures
-    default: chocolatey
-    aliases: []
-  url:
-    description:
-      - When source == 'url', url must be specified with a valid chocolatey repository
+      - Specify source rather than using default chocolatey repository
     require: false
     default: null
     aliases: []
@@ -110,17 +98,8 @@ EXAMPLES = '''
     name: git
     state: absent
 
-  # Install Application Request Routing v3 from webpi
-  # Logically, this requires that you install IIS first (see win_feature)
-  # To find a list of packages available via webpi source, `choco list -source webpi`
+  # Install git from specified repository
   win_chocolatey:
-    name: ARRv3
-    source: webpi
-
-  # Install Chocolatey Package from Custom Repository
-  # If source == 'url' than you must specify a url shown below
-  win_chocolatey:
-    name: 7zip
-    source: url
-    url: https://someserver/api/v2/
+    name: git
+    source: https://someserver/api/v2/
 '''

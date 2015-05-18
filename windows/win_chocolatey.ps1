@@ -61,6 +61,15 @@ Else
     $version = $null
 }
 
+If ($params.source)
+{
+    $source = $params.source.ToString().ToLower()
+}
+Else
+{
+    $source = $null
+}
+
 If ($params.showlog)
 {
     $showlog = $params.showlog | ConvertTo-Bool
@@ -147,6 +156,8 @@ Function Choco-Upgrade
         [Parameter(Mandatory=$false, Position=2)]
         [string]$version,
         [Parameter(Mandatory=$false, Position=3)]
+        [string]$source,
+        [Parameter(Mandatory=$false, Position=4)]
         [bool]$force
     )
 
@@ -157,15 +168,14 @@ Function Choco-Upgrade
 
     $cmd = "$executable upgrade -dv -y $package"
 
-    if ($params.source)
-    {
-        $source = $params.source.ToString().ToLower()
-        $cmd += " -source $source"
-    }
-
     if ($version)
     {
         $cmd += " -version $version"
+    }
+
+    if ($source)
+    {
+        $cmd += " -source $source"
     }
 
     if ($force)
@@ -201,8 +211,10 @@ Function Choco-Install
         [Parameter(Mandatory=$false, Position=2)]
         [string]$version,
         [Parameter(Mandatory=$false, Position=3)]
-        [bool]$force,
+        [string]$source,
         [Parameter(Mandatory=$false, Position=4)]
+        [bool]$force,
+        [Parameter(Mandatory=$false, Position=5)]
         [bool]$upgrade
     )
 
@@ -210,7 +222,7 @@ Function Choco-Install
     {
         if ($upgrade)
         {
-            Choco-Upgrade -package $package -version $version -force $force
+            Choco-Upgrade -package $package -version $version -source $source -force $force
         }
 
         return
@@ -218,15 +230,14 @@ Function Choco-Install
 
     $cmd = "$executable install -dv -y $package"
 
-    if ($params.source)
-    {
-        $source = $params.source.ToString().ToLower()
-        $cmd += " -source $source"
-    }
-
     if ($version)
     {
         $cmd += " -version $version"
+    }
+
+    if ($source)
+    {
+        $cmd += " -source $source"
     }
 
     if ($force)
@@ -293,7 +304,7 @@ Try
 
     if ($state -eq "present")
     {
-        Choco-Install -package $package -version $version `
+        Choco-Install -package $package -version $version -source $source `
             -force $force -upgrade $upgrade
     }
     else
@@ -307,3 +318,4 @@ Catch
 {
      Fail-Json $result $_.Exception.Message
 }
+

@@ -61,6 +61,15 @@ Else
     $version = $null
 }
 
+If ($params.source)
+{
+    $source = $params.source.ToString().ToLower()
+}
+Else
+{
+    $source = $null
+}
+
 If ($params.showlog)
 {
     $showlog = $params.showlog | ConvertTo-Bool
@@ -159,27 +168,14 @@ Function Choco-Upgrade
 
     $cmd = "$executable upgrade -dv -y $package"
 
-    if (-not $source)
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif ($source -eq "chocolatey")
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif (($source -eq "windowsfeatures") -or `
-        ($source -eq "webpi") -or ($source -eq "ruby"))
-    {
-        $cmd += " -source $source"
-    }
-    else
-    {
-        Throw "source is $source - must be one of chocolatey, ruby, webpi or windowsfeatures."
-    }
-
     if ($version)
     {
         $cmd += " -version $version"
+    }
+
+    if ($source)
+    {
+        $cmd += " -source $source"
     }
 
     if ($force)
@@ -234,27 +230,14 @@ Function Choco-Install
 
     $cmd = "$executable install -dv -y $package"
 
-    if (-not $source)
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif ($source -eq "chocolatey")
-    {
-        $cmd += " -source https://chocolatey.org/api/v2/"
-    }
-    elseif (($source -eq "windowsfeatures") -or `
-        ($source -eq "webpi") -or ($source -eq "ruby"))
-    {
-        $cmd += " -source $source"
-    }
-    else
-    {
-        Throw "source is $source - must be one of chocolatey, ruby, webpi or windowsfeatures."
-    }
-
     if ($version)
     {
         $cmd += " -version $version"
+    }
+
+    if ($source)
+    {
+        $cmd += " -source $source"
     }
 
     if ($force)
@@ -319,16 +302,10 @@ Try
 {
     Chocolatey-Install-Upgrade
 
-    if (($source -eq 'webpi') -and -not (Choco-IsInstalled webpicmd))
-    {
-        Choco-Install lessmsi
-        Choco-Install webpicmd
-    }
-
     if ($state -eq "present")
     {
-        Choco-Install -package $package -version $version `
-            -source $params.source -force $force -upgrade $upgrade
+        Choco-Install -package $package -version $version -source $source `
+            -force $force -upgrade $upgrade
     }
     else
     {
@@ -341,3 +318,4 @@ Catch
 {
      Fail-Json $result $_.Exception.Message
 }
+
